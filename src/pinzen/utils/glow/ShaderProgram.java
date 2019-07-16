@@ -24,7 +24,7 @@ import java.io.FileReader;
 
 import pinzen.utils.mathsfog.Matrix4f;
 
-public class Shader {
+public class ShaderProgram {
 
 	/**
 	 * Default Vertex Shader (mostly used by internal logic)
@@ -71,7 +71,7 @@ public class Shader {
 	 * It uses colors, textures and position to render
 	 * It uses view, model and projection matrices for coordinate system
 	 */
-	public static final Shader DEFAULT_SHADER = new Shader();
+	public static final ShaderProgram DEFAULT_SHADER = new ShaderProgram();
 	
 	private int programId;
 	private int fragmentId, vertexId;
@@ -79,10 +79,10 @@ public class Shader {
 	/**
 	 * Create default Shader
 	 */
-	private Shader() {
+	private ShaderProgram() {
 		//Create Vertex Shader from sources
 		vertexId = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vertexId, Shader.DEFAULT_VERTEX_SHADER);
+		glShaderSource(vertexId, ShaderProgram.DEFAULT_VERTEX_SHADER);
 		glCompileShader(vertexId);
 		
 		if(glGetShaderi(vertexId, GL_COMPILE_STATUS) != 1)
@@ -90,7 +90,7 @@ public class Shader {
 				
 		//Create Fragment Shader from sources
 		fragmentId = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fragmentId, Shader.DEFAULT_FRAGMENT_SHADER);
+		glShaderSource(fragmentId, ShaderProgram.DEFAULT_FRAGMENT_SHADER);
 		glCompileShader(fragmentId);
 		
 		if(glGetShaderi(fragmentId, GL_COMPILE_STATUS) != 1)
@@ -115,7 +115,7 @@ public class Shader {
 	 * @param vertexPath : path to the Vertex Shader file
 	 * @param fragmentPath : path to the Fragment Shader file
 	 */
-	public Shader(String vertexPath, String fragmentPath) {
+	public ShaderProgram(String vertexPath, String fragmentPath) {
 		String vertexSource = "";
 		try {
 			BufferedReader buffVert = new BufferedReader(new FileReader(new File(vertexPath)));
