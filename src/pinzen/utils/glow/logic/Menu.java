@@ -2,7 +2,7 @@ package pinzen.utils.glow.logic;
 
 import java.util.ArrayList;
 
-import pinzen.utils.glow.Shader;
+import pinzen.utils.glow.ShaderProgram;
 import pinzen.utils.glow.inputs.IMouseListener;
 import pinzen.utils.glow.inputs.InputManager;
 import pinzen.utils.glow.inputs.InputManager.MouseButton;
@@ -12,29 +12,33 @@ import pinzen.utils.mathsfog.Vertex2f;
 
 public abstract class Menu implements IMouseListener{
 
-	private WindowContainer window;
+	private ApplicationWindow window;
 	
 	private ArrayList<GUI> GUIs;
-	
-	public Menu(WindowContainer win) {
+		
+	public Menu(ApplicationWindow win) {
 		this.window = win;
 		this.GUIs = new ArrayList<GUI>();
 		
 		init();
 	}
 	
+		/** ----- Functions to override ----- **/
+	
 	public abstract void init();
+	
+	public abstract void onShow();
 	
 	public abstract void update(long delta);
 	
-	public abstract void render(Shader s);
+	public abstract void render(ShaderProgram s);
+	
+	public abstract void onHide();
 	
 	public abstract void dispose();
-	
-	protected abstract void processMouseEvent(Vertex2f pos,
-											  MouseButton button,
-											  MouseEvent event);
 
+		/** --- End Functions to override --- **/
+		
 	
 	public void setActual() {
 		this.window.setMenu(this);
@@ -42,10 +46,6 @@ public abstract class Menu implements IMouseListener{
 	
 	public void closeWindow() {
 		this.window.close();
-	}
-	
-	public void sendModelMatrix(Matrix4f model) {
-		this.window.sendModelMatrix(model);
 	}
 	
 	public void closeAllGUI() {
@@ -63,48 +63,48 @@ public abstract class Menu implements IMouseListener{
 	}
 	
 	/**
-	 * Function internally called for click logic <br>
-	 * Prefer using "processMouseEvent"
-	 * If really needed, don't forget to call super.onMouseEvent
+	 * Check if a click was processed inside a GUI
 	 */
-	public void _onMouseEvent(Vertex2f pos, MouseButton button, MouseEvent event) {
+	public boolean processClickOnGUIs(Vertex2f pos, MouseButton button, MouseEvent event) {
 		boolean onGUI = false;
 		//Revert loop so last GUI is on top
 		for(int i = GUIs.size()-1; i>=0; i--) {
-			onGUI = onGUI || GUIs.get(i)._onMouseEvent(pos, button, event);
+			GUI currentGUI = GUIs.get(i);
+			onGUI = onGUI || currentGUI.processClickOnComponents(pos, button, event);
 			
-			//If click was consumed by a GUI, stop loop
+			//Check if click is inside GUI and process if true
+			if(!onGUI && currentGUI.isPointInsideGUI(pos)) {
+				currentGUI.onMouseEvent(pos, button, event);
+				onGUI = true;
+			}
+			
+			//If click was consumed by a GUI or one of its components, stop looping
 			if(onGUI)
 				break;
 		}
 		
-		//If click isn't in any GUI then process click
-		if(!onGUI) {
-			this.processMouseEvent(pos, button, event);
+		return onGUI;
+	}
+	
+	/**
+	 * Render all GUIs of this menu
+	 */
+	protected void renderGUIs(ShaderProgram shaderGUI) {
+		shaderGUI.setUniformMatrix4f("view", new Matrix4f());
+		for(GUI g : this.GUIs) {
+			g.render(shaderGUI);
+			g.renderComponents(shaderGUI);
 		}
 	}
 	
 	/**
-	 * Function internally called for rendering <br>
-	 * Use "render"
+	 * Update all GUIs of this menu
 	 */
-	protected void _renderMenu(Shader s) {
-		this.render(s);
-		
-		s.setUniformMatrix4f("view", new Matrix4f());
-		for(GUI g : this.GUIs)
-			g._renderGUI(s);
-	}
-	
-	/**
-	 * Function internally called for updating <br>
-	 * Use "update"
-	 */
-	protected void _updateMenu(long delta) {
-		this.update(delta);
-		
-		for(GUI g : this.GUIs)
-			g._updateGUI(delta);;
+	protected void updateGUIs(long delta) {		
+		for(GUI g : this.GUIs) {
+			g.updateComponents(delta);
+			g.update(delta);
+		}
 	}
 	
 		/* ----- ----- Getters ----- ----- **/

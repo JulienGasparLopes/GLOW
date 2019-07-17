@@ -3,13 +3,14 @@ package pinzen.utils.glow.logic;
 import java.util.ArrayList;
 import java.util.List;
 
-import pinzen.utils.glow.Shader;
+import pinzen.utils.glow.ShaderProgram;
 import pinzen.utils.glow.components.Component;
+import pinzen.utils.glow.inputs.IMouseListener;
 import pinzen.utils.glow.inputs.InputManager.MouseButton;
 import pinzen.utils.glow.inputs.InputManager.MouseEvent;
 import pinzen.utils.mathsfog.Vertex2f;
 
-public abstract class GUI {
+public abstract class GUI implements IMouseListener{
 
 	private static boolean DEFAULT_VISIBILITY = true;
 	
@@ -36,71 +37,64 @@ public abstract class GUI {
 	}
 
 	/**
-	 * Function internally called for click logic <br>
-	 * Prefer using "processMouseEvent"
-	 * If really needed, don't forget to call super._onMouseEvent
+	 * Check if a click was processed inside a Component
 	 */
-	public boolean _onMouseEvent(Vertex2f pos, MouseButton button, MouseEvent event) {
-		if(visible) {
-			Vertex2f absPos = Vertex2f.difference(position, pos);
-			//Check if event is on GUI bounds
-			if(absPos.x >= 0 && absPos.y >= 0 && absPos.x <= bounds.x && absPos.y <= bounds.y) {
-				//Call every component's function onMouseEvent
-				boolean isOnComp = false;
-				for(Component c : components) {
-					//If a component already consumed event, stop using it
-					if(!isOnComp)
-						isOnComp = isOnComp || c.onMouseEvent(pos, button, event);
+	public boolean processClickOnComponents(Vertex2f pos, MouseButton button, MouseEvent event) {
+		boolean isOnComp = false;
+		
+		if(visible && this.isPointInsideGUI(pos)) {
+			//Call every component's function onMouseEvent
+			for(Component c : components) {
+				//If a component already consumed event, stop using it
+				if(!isOnComp) {
+					isOnComp = isOnComp || c.onMouseEvent(pos, button, event);
 				}
-				
-				//If a component already consumed event do not call GUI's function onMouseEvent
-				if(!isOnComp)
-					this.processMouseEvent(pos, button, event);
-				
-				return true;
 			}
 		}
 		
-		
-		return false;
+		return isOnComp;
+	}
+	
+	public boolean isPointInsideGUI(Vertex2f pos) {
+		Vertex2f absPos = Vertex2f.difference(position, pos);
+		return absPos.x >= 0 && absPos.y >= 0 && absPos.x <= bounds.x && absPos.y <= bounds.y;
 	}
 
 	/**
-	 * Function internally called for rendering <br>
-	 * Use "render" instead
+	 * Render all Components of this GUI
 	 */
-	protected void _renderGUI(Shader s) {
+	protected void renderComponents(ShaderProgram s) {
 		if(this.visible) {
-			this.render(s);
-			
 			for(Component c : components)
 				c.render(s);
 		}
 	}
 	
 	/**
-	 * Function internally called for updating <br>
-	 * Use "update" instead
+	 * Update all Components of this GUI
 	 */
-	protected void _updateGUI(long delta) {
+	protected void updateComponents(long delta) {
 		if(this.visible) {
-			this.update(delta);
-			
 			for(Component c : components) {
 				c.update(container.inputs(), delta);
 			}
 		}
 	}
 	
-	public abstract void render(Shader s);
+		/** ----- Functions to override ----- **/
+
+	protected abstract void init();
+	
+	protected abstract void onShow();
+
+	public abstract void render(ShaderProgram s);
 	
 	public abstract void update(long delta);
 	
-	protected abstract void processMouseEvent(Vertex2f pos, MouseButton button, MouseEvent event);
-
-	protected abstract void onShow();
-	
 	protected abstract void onHide();
+	
+		/** --- End Functions to override --- **/
+	
 	
 	public void addComponent(Component c) {
 		this.components.add(c);

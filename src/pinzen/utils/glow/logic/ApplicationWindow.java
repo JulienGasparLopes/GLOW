@@ -5,11 +5,8 @@ import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glViewport;
 
-import pinzen.utils.glow.Shader;
+import pinzen.utils.glow.ShaderProgram;
 import pinzen.utils.glow.Window;
 import pinzen.utils.glow.inputs.IMouseListener;
 import pinzen.utils.glow.inputs.InputManager;
@@ -18,16 +15,16 @@ import pinzen.utils.glow.inputs.InputManager.MouseEvent;
 import pinzen.utils.mathsfog.Matrix4f;
 import pinzen.utils.mathsfog.Vertex2f;
 
-public final class WindowContainer extends Window implements IMouseListener{
+public abstract class ApplicationWindow extends Window implements IMouseListener{
 
 	private String title;
 
 	//Menu
-	private Menu actualMenu;
+	protected Menu currentMenu;
 	
 	//Shader variables
-	private Shader shader;
-	private Matrix4f projection, view;
+	protected ShaderProgram shader, shaderGUI;
+	protected Matrix4f projection;
 	
 	//InputManager
 	private InputManager inputs;
@@ -38,7 +35,7 @@ public final class WindowContainer extends Window implements IMouseListener{
 	private int actualFPS, counterFPS;
 	private long lastFrame, delta, counterSecond, now;
 				
-	public WindowContainer(String title, int width, int height, boolean resizable) {
+	public ApplicationWindow(String title, int width, int height, boolean resizable) {
 		super(title, width, height, resizable);
 		this.title = title;
 		
@@ -48,9 +45,7 @@ public final class WindowContainer extends Window implements IMouseListener{
 		this.counterSecond = 0;
 		
 		//Default shader and matrices values
-		this.shader = Shader.DEFAULT_SHADER;
-		this.projection = Matrix4f.getOrtho(0, 0, width, height, 0, 1);
-		this.view = new Matrix4f();
+		this.shader = ShaderProgram.DEFAULT_SHADER;
 		
 		//Default InputManager
 		this.inputs = new InputManager(this.windowId);
@@ -101,8 +96,9 @@ public final class WindowContainer extends Window implements IMouseListener{
 					
 					
 					//Update 
-					if(this.actualMenu != null) {
-						this.actualMenu._updateMenu(delta);
+					if(this.currentMenu != null) {
+						this.currentMenu.updateGUIs(delta);
+						this.currentMenu.update(delta);
 					}
 					else
 						throw new RuntimeException("No menu was set for the window");
@@ -118,46 +114,30 @@ public final class WindowContainer extends Window implements IMouseListener{
 		}
 	}
 		
-	private void render() {
-		glClear(GL_COLOR_BUFFER_BIT);
-		
-		shader.use();
-		shader.setUniformMatrix4f("view",view);
-		shader.setUniformMatrix4f("projection", projection);
-		
-		this.actualMenu._renderMenu(this.shader);
-	}
+	protected abstract void render();
 	
-	private void windowResizeCallback(long winId, int width, int height) {
-		this.width = width;
-		this.height = height;
-		
-		this.inputs.updateWindowSize(width, height);
-		this.projection = Matrix4f.getOrtho(0, 0, width, height, 0, 1);
-		glViewport(0, 0, width, height);
-	}
+	protected abstract void windowResizeCallback(long winId, int width, int height);
 	
 	public void setMenu(Menu m) {
-		if(this.actualMenu != m) {
-			//Remove mouse listener
-			if(this.actualMenu != null) {
-				this.inputs.removeMouseListener(actualMenu);
+		if(this.currentMenu != m) {
+			//Remove old menu
+			if(this.currentMenu != null) {
+				this.currentMenu.onHide();
 			}
 						
 			//Set the new menu
-			this.actualMenu = m;
-			this.inputs.addMouseListener(actualMenu);
+			this.currentMenu = m;
 		}
 	}
 	
 	
-	public void setShader(Shader s) {
+	public void setMainShader(ShaderProgram s) {
 		this.shader = s;
 	}
-	public void sendModelMatrix(Matrix4f model) {
-		shader.setUniformMatrix4f("model",model);
-	}
 	
+	public void setGUIShader(ShaderProgram s) {
+		this.shaderGUI = s;
+	}	
 	
 	public InputManager getInputs() {
 		return this.inputs;
@@ -176,7 +156,10 @@ public final class WindowContainer extends Window implements IMouseListener{
 	}
 
 	@Override
-	public void _onMouseEvent(Vertex2f pos, MouseButton button, MouseEvent event) {
-		//Actual menu is added on list of mouse listener, no need to do this here
+	public void onMouseEvent(Vertex2f pos, MouseButton button, MouseEvent event) {
+		boolean wasProcessed = this.currentMenu.processClickOnGUIs(pos, button, event);
+		if(!wasProcessed) {
+			this.currentMenu.onMouseEvent(pos, button, event);
+		}
 	}
 }
