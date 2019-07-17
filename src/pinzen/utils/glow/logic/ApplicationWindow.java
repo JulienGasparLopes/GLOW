@@ -32,7 +32,7 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 	//FPS variables
 	private int maxFPS;
 	private boolean showFPSOnTitle;
-	private int actualFPS, counterFPS;
+	private int currentFPS, counterFPS;
 	private long lastFrame, delta, counterSecond, now;
 				
 	public ApplicationWindow(String title, int width, int height, boolean resizable) {
@@ -41,7 +41,7 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 		
 		//Default FPS value
 		this.maxFPS = 50;
-		this.lastFrame = System.currentTimeMillis();
+		this.lastFrame = System.nanoTime();
 		this.counterSecond = 0;
 		
 		//Default shader and matrices values
@@ -74,23 +74,24 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 			
 			//Update FPS
 			{
-				this.now = System.currentTimeMillis();
+				this.now = System.nanoTime();
 				this.delta = now - lastFrame;
 				//10 frames where skipped, we mustn't update nor render
-				if(delta >= (1000/maxFPS)*10) {
+				if(delta >= (10000000000f/(float)maxFPS)*10f) {
 					this.lastFrame = now;
 				}
 				//Render only if last render occur more than 1000/FPS millis ago
-				else if(delta >= (1000/maxFPS)) {
+				else if(delta >= (1000000000f/(float)maxFPS)) {
 					//Update FPS counters
 					this.counterFPS++;
 					this.lastFrame = now;
 					this.counterSecond += delta;
-					if(this.counterSecond >= 1000) {
-						this.actualFPS = this.counterFPS;
+					if(this.counterSecond >= 1000000000f) {
+						this.currentFPS = this.counterFPS;
 						this.counterFPS = 0;
+						this.counterSecond = 0;
 						if(showFPSOnTitle)
-							this.setTitle(this.title + " [FPS:" + actualFPS + "]");
+							this.setTitle(this.title + " [FPS:" + currentFPS + "]");
 					}
 					
 					glfwSwapBuffers(this.windowId);
@@ -98,8 +99,8 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 					
 					//Update 
 					if(this.currentMenu != null) {
-						this.currentMenu.updateGUIs(delta);
-						this.currentMenu.update(delta);
+						this.currentMenu.updateGUIs(delta/1000000);
+						this.currentMenu.update(delta/1000000);
 					}
 					else
 						throw new RuntimeException("No menu was set for the window");
