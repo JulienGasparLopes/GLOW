@@ -37,7 +37,7 @@ public abstract class CButton extends Component{
 	public void update(InputManager inputs, long delta) {
 		//Update only if button ins't disabled
 		if(this.state != ButtonState.DISABLED) {
-			Vertex2f pos = inputs.GetcursorPos();
+			Vertex2f pos = inputs.getcursorPos();
 			if(this.state == ButtonState.IDDLE && bounds.contains(pos)) {
 				this.state = ButtonState.HOVERED;
 			}

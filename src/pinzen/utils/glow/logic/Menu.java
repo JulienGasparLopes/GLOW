@@ -40,7 +40,7 @@ public abstract class Menu implements IMouseListener{
 		/** --- End Functions to override --- **/
 		
 	
-	public void setActual() {
+	public void setCurrent() {
 		this.window.setMenu(this);
 	}
 	

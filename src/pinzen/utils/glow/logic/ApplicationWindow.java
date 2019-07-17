@@ -45,7 +45,8 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 		this.counterSecond = 0;
 		
 		//Default shader and matrices values
-		this.shader = ShaderProgram.DEFAULT_SHADER;
+		this.shader = ShaderProgram.DEFAULT_SHADER_2D;
+		this.shaderGUI = this.shader;
 		
 		//Default InputManager
 		this.inputs = new InputManager(this.windowId);

@@ -6,7 +6,7 @@ import pinzen.utils.mathsfog.Vertex2f;
 
 public interface IMouseListener {
 
-	public void _onMouseEvent(Vertex2f pos,
+	public void onMouseEvent(Vertex2f pos,
 							 MouseButton button,
 							 MouseEvent event);
 }

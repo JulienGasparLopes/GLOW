@@ -1,21 +1,17 @@
 package pinzen.utils.glow.inputs;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_S;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_UP;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
+import static org.lwjgl.glfw.GLFW.GLFW_CURSOR;
+import static org.lwjgl.glfw.GLFW.GLFW_CURSOR_HIDDEN;
+import static org.lwjgl.glfw.GLFW.GLFW_CURSOR_NORMAL;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
-import static org.lwjgl.glfw.GLFW.glfwGetKey;
+import static org.lwjgl.glfw.GLFW.glfwSetCursorPos;
+import static org.lwjgl.glfw.GLFW.glfwSetInputMode;
 import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
 
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
@@ -34,6 +30,7 @@ public class InputManager {
 		
 	private static final int MAX_CLICK_DIST = 0;
 	
+	@SuppressWarnings("unused")
 	private static final int MOUSE_BUTTON_LEFT = GLFW_MOUSE_BUTTON_LEFT,
 							MOUSE_BUTTON_RIGHT = GLFW_MOUSE_BUTTON_RIGHT,
 							ACTION_RELEASED = GLFW_RELEASE,
@@ -98,8 +95,10 @@ public class InputManager {
 		//Set callback function for cursor position modification
 		//glfwSetCursorPosCallback(window, this::cursorPosCallback);
 		
-		//Set callback function for cursor position modification
+		//Set callback function for cursor click
 		glfwSetMouseButtonCallback(window, this::mouseClickCallback);
+		
+		glfwSetKeyCallback(window, this::keyCallback);
 	}
 	
 	private void cursorPosCallback(long winId, double x, double y) {
@@ -108,7 +107,7 @@ public class InputManager {
 	}
 	
 	private void mouseClickCallback(long winId, int button, int action, int mods){		
-		this.cursorPosition = GetcursorPos();
+		this.cursorPosition = getcursorPos();
 				
 		this.listeners.addAll(listenersToAdd);
 		this.listeners.removeAll(listenersToRemove);
@@ -120,17 +119,17 @@ public class InputManager {
 				//Update last press event position
 				this.leftClickPosition = this.cursorPosition.clone();
 				for(IMouseListener listen : listeners)
-					listen._onMouseEvent(this.cursorPosition, MouseButton.LEFT, MouseEvent.PRESSED);
+					listen.onMouseEvent(this.cursorPosition, MouseButton.LEFT, MouseEvent.PRESSED);
 			}
 			else {
 				//If release happened next to press event fire click event
 				if(leftClickPosition != null && Vertex2f.difference(cursorPosition, leftClickPosition).getNorm() <= MAX_CLICK_DIST) {
 					for(IMouseListener listen : listeners)
-						listen._onMouseEvent(this.leftClickPosition, MouseButton.LEFT, MouseEvent.CLICKED);
+						listen.onMouseEvent(this.leftClickPosition, MouseButton.LEFT, MouseEvent.CLICKED);
 				}
 				//Send release event
 				for(IMouseListener listen : listeners)
-					listen._onMouseEvent(this.cursorPosition, MouseButton.LEFT, MouseEvent.RELEASED);
+					listen.onMouseEvent(this.cursorPosition, MouseButton.LEFT, MouseEvent.RELEASED);
 
 				//remove button pressed position
 				this.leftClickPosition = null;
@@ -141,20 +140,33 @@ public class InputManager {
 				//Update last press event position
 				this.rightClickPosition = this.cursorPosition.clone();
 				for(IMouseListener listen : listeners)
-					listen._onMouseEvent(this.cursorPosition, MouseButton.RIGHT, MouseEvent.PRESSED);
+					listen.onMouseEvent(this.cursorPosition, MouseButton.RIGHT, MouseEvent.PRESSED);
 			}
 			else {
 				//If release happened next to press event fire click event
 				if(Vertex2f.difference(cursorPosition, rightClickPosition).getNorm() <= MAX_CLICK_DIST) {
 					for(IMouseListener listen : listeners)
-						listen._onMouseEvent(this.rightClickPosition, MouseButton.RIGHT, MouseEvent.CLICKED);
+						listen.onMouseEvent(this.rightClickPosition, MouseButton.RIGHT, MouseEvent.CLICKED);
 				}
 				//Send release event
 				for(IMouseListener listen : listeners)
-					listen._onMouseEvent(this.cursorPosition, MouseButton.RIGHT, MouseEvent.RELEASED);
+					listen.onMouseEvent(this.cursorPosition, MouseButton.RIGHT, MouseEvent.RELEASED);
 				
 				//Remove button pressed position
 				this.rightClickPosition = null;
+			}
+		}
+	}
+	
+	private void keyCallback(long winId, int key, int scancode, int action, int mods) {
+		if(action == GLFW_PRESS) {
+			if(this.keysState.containsKey(Key.fromGlfwKey(key))) {
+				this.keysState.get(Key.fromGlfwKey(key)).keyDown();
+			}
+		}
+		else if(action == GLFW_RELEASE) {
+			if(this.keysState.containsKey(Key.fromGlfwKey(key))) {
+				this.keysState.get(Key.fromGlfwKey(key)).keyUp();
 			}
 		}
 	}
@@ -164,7 +176,7 @@ public class InputManager {
 	}
 	
 	public void removeMouseListener(IMouseListener listen) {
-		this.listenersToRemove.remove(listen);
+		this.listenersToRemove.add(listen);
 	}
 	
 	public void updateWindowSize(int w, int h) {
@@ -172,7 +184,7 @@ public class InputManager {
 		this.height = h;
 	}
 	
-	public Vertex2f GetcursorPos() {
+	public Vertex2f getcursorPos() {
 		DoubleBuffer xBuffer = BufferUtils.createDoubleBuffer(1);
 		DoubleBuffer yBuffer = BufferUtils.createDoubleBuffer(1);
 		glfwGetCursorPos(this.windowId, xBuffer, yBuffer);
@@ -181,32 +193,40 @@ public class InputManager {
 		return new Vertex2f(x, y);
 	}
 	
+	public Vertex2f centerCursor() {
+		glfwSetCursorPos(this.windowId, this.width/2f, this.height/2f);
+		return new Vertex2f(this.width/2, this.height/2);
+	}
+	
+	public void showCursor() {
+		glfwSetInputMode(this.windowId, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+	public void hideCursor() {
+		glfwSetInputMode(this.windowId, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	}
+	
 	public boolean isLeftDown() {
-		return isKeyDown(GLFW_KEY_A) || isKeyDown(GLFW_KEY_LEFT);
+		return isKeyDown(Key.Q) || isKeyDown(Key.LEFT);
 	}
 	
 	public boolean isRightDown() {
-		return isKeyDown(GLFW_KEY_D) || isKeyDown(GLFW_KEY_RIGHT);
+		return isKeyDown(Key.D) || isKeyDown(Key.RIGHT);
 	}
 	
 	public boolean isUpDown() {
-		return isKeyDown(GLFW_KEY_W) || isKeyDown(GLFW_KEY_UP);
+		return isKeyDown(Key.Z) || isKeyDown(Key.UP);
 	}
 	
 	public boolean isDownDown() {
-		return isKeyDown(GLFW_KEY_S) || isKeyDown(GLFW_KEY_DOWN);
+		return isKeyDown(Key.S) || isKeyDown(Key.DOWN);
 	}
 	
 	public boolean isSpaceDown() {
-		return isKeyDown(GLFW_KEY_SPACE);
-	}
-	
-	private boolean isKeyDown(int glwfKey) {
-		return glfwGetKey(this.windowId, glwfKey) == GLFW_PRESS;
+		return isKeyDown(Key.SPACE);
 	}
 	
 	public boolean isKeyDown(Key k) {
-		return isKeyDown(k.getKeyCode());
+		return this.keysState.get(k).isDown;
 	}
 	
 	public boolean consumeKey(Key k) {

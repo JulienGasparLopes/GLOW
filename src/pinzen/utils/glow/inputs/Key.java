@@ -40,8 +40,25 @@ public enum Key {
 	HEIGHT(GLFW_KEY_8, GLFW_KEY_8),
 	NINE(GLFW_KEY_9, GLFW_KEY_9),
 	ZERO(GLFW_KEY_0, GLFW_KEY_0),
-	SPACE(GLFW_KEY_SPACE,GLFW_KEY_SPACE),
-	ESCAPE(GLFW_KEY_ESCAPE, GLFW_KEY_ESCAPE);
+	SPACE(GLFW_KEY_SPACE),
+	ESCAPE(GLFW_KEY_ESCAPE),
+	LEFT(GLFW_KEY_LEFT),
+	RIGHT(GLFW_KEY_RIGHT),
+	UP(GLFW_KEY_UP),
+	DOWN(GLFW_KEY_DOWN),
+	LSHIFT(GLFW_KEY_LEFT_SHIFT),
+	F1(GLFW_KEY_F1),
+	F2(GLFW_KEY_F2),
+	F3(GLFW_KEY_F3),
+	F4(GLFW_KEY_F4),
+	F5(GLFW_KEY_F5),
+	F6(GLFW_KEY_F6),
+	F7(GLFW_KEY_F7),
+	F8(GLFW_KEY_F8),
+	F9(GLFW_KEY_F9),
+	F10(GLFW_KEY_F10),
+	F11(GLFW_KEY_F11),
+	F12(GLFW_KEY_F12);
 	
 	private int keyQUERTY, keyAZERTY;
 	
@@ -50,7 +67,19 @@ public enum Key {
 		this.keyAZERTY = keyAZERTY;
 	}
 	
+	Key(int keyBoth){
+		this(keyBoth, keyBoth);
+	}
+	
 	public int getKeyCode() {
 		return InputManager.IS_QUERTY ? this.keyQUERTY : this.keyAZERTY;
+	}
+	
+	public static Key fromGlfwKey(int key) {
+		for(Key k : Key.values()) {
+			if(key == k.keyAZERTY)
+				return k;
+		}
+		return null;
 	}
 }
