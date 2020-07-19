@@ -107,6 +107,9 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 					
 					//Render
 					this.render();
+					if(this.currentMenu != null) {
+						this.currentMenu.renderGUIs(shaderGUI);;
+					}
 				}
 			}
 			return true;
@@ -128,6 +131,7 @@ public abstract class ApplicationWindow extends Window implements IMouseListener
 			}
 						
 			//Set the new menu
+			m.onShow();
 			this.currentMenu = m;
 		}
 	}

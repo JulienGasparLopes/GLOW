@@ -21,6 +21,8 @@ public abstract class GUI implements IMouseListener{
 	private Vertex2f position, bounds;
 	private Menu container;
 	
+	private boolean shouldCatchClick;
+	
 	public GUI(Menu m, Vertex2f pos, Vertex2f bounds) {
 		this.container = m;
 		
@@ -28,12 +30,19 @@ public abstract class GUI implements IMouseListener{
 		this.bounds = bounds.clone();
 		
 		this.visible = DEFAULT_VISIBILITY;
+		this.shouldCatchClick = true;
 		
 		this.components = new ArrayList<Component>();
+		
+		this.init();
 	}
 	
 	public GUI(Menu m, float x, float y, float width, float height) {
 		this(m, new Vertex2f(x,y), new Vertex2f(width,height));
+	}
+	
+	public GUI(Menu m) {
+		this(m, new Vertex2f(0, 0), new Vertex2f(m.getWidth(), m.getHeight()));
 	}
 
 	/**
@@ -48,6 +57,9 @@ public abstract class GUI implements IMouseListener{
 				//If a component already consumed event, stop using it
 				if(!isOnComp) {
 					isOnComp = isOnComp || c.onMouseEvent(pos, button, event);
+				}
+				else {
+					break;
 				}
 			}
 		}
@@ -65,8 +77,9 @@ public abstract class GUI implements IMouseListener{
 	 */
 	protected void renderComponents(ShaderProgram s) {
 		if(this.visible) {
-			for(Component c : components)
+			for(Component c : components) {
 				c.render(s);
+			}
 		}
 	}
 	
@@ -136,12 +149,20 @@ public abstract class GUI implements IMouseListener{
 		this.position = pos.clone();
 	}
 	
+	public void setCatchClickBehavior(boolean shouldCatch) {
+		this.shouldCatchClick = shouldCatch;
+	}
+	
 	public Vertex2f getPosition() {
 		return this.position.clone();
 	}
 	
 	public Vertex2f getBounds() {
 		return this.bounds.clone();
+	}
+	
+	public boolean shouldCatchClick() {
+		return this.shouldCatchClick;
 	}
 	
 	

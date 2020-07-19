@@ -19,14 +19,10 @@ public abstract class Menu implements IMouseListener{
 	public Menu(ApplicationWindow win) {
 		this.window = win;
 		this.GUIs = new ArrayList<GUI>();
-		
-		init();
 	}
 	
 		/** ----- Functions to override ----- **/
-	
-	public abstract void init();
-	
+		
 	public abstract void onShow();
 	
 	public abstract void update(long delta);
@@ -73,7 +69,7 @@ public abstract class Menu implements IMouseListener{
 			onGUI = onGUI || currentGUI.processClickOnComponents(pos, button, event);
 			
 			//Check if click is inside GUI and process if true
-			if(!onGUI && currentGUI.isPointInsideGUI(pos)) {
+			if(!onGUI && currentGUI.shouldCatchClick() && currentGUI.isPointInsideGUI(pos)) {
 				currentGUI.onMouseEvent(pos, button, event);
 				onGUI = true;
 			}
@@ -115,6 +111,10 @@ public abstract class Menu implements IMouseListener{
 	 */
 	public InputManager inputs() {
 		return this.window.getInputs();
+	}
+	
+	public Vertex2f getBounds() {
+		return new Vertex2f(getWidth(), getHeight());
 	}
 	
 	public int getWidth() {
